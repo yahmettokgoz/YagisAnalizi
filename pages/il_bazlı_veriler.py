@@ -47,3 +47,4 @@ rain_df = pd.DataFrame(rain_data, index=["Ocak", "Şubat", "Mart", "Nisan", "May
 # Seçilen şehrin verilerini gösterme
 st.subheader(f"{sehir} Şehrinin 12 Aylık Ortalama Yağış Verisi")
 st.bar_chart(rain_df[sehir])
+print(a)
