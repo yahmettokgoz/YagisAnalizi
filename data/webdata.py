@@ -1,5 +1,5 @@
 import psycopg2
-import streamlit as st 
+import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
@@ -7,7 +7,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
-from datetime import datetime  
+from datetime import datetime
+
 
 class RainfallData:
     def __init__(self):
@@ -20,10 +21,10 @@ class RainfallData:
         try:
             conn = psycopg2.connect(
                 dbname='raindb',  
-                user='postgres',    
-                password='134679',       
-                host='localhost',        
-                port='5432'              
+                user='postgres',  
+                password='134679',  
+                host='localhost',  
+                port='5432'  
             )
             print("Veritabanı bağlantısı başarılı")
             return conn
@@ -32,52 +33,71 @@ class RainfallData:
 
     def get_rainfall_data(self):
         self.driver.get(self.url)
-        time.sleep(7)  #sayfanın yüklenmesi için geçici bekleme
+        time.sleep(7)  #page bekleme
 
-        #tabloyu bulmak için bekleme
+        #Tabloyu bulmak için bekleme
         WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.XPATH, '//*[@id="cph_body_pnlTablo"]/table'))
         )
 
-        #tablo bulma
+        #tablo  bul xpath
         table = self.driver.find_element(By.XPATH, '//*[@id="cph_body_pnlTablo"]/table')
         rows = table.find_elements(By.TAG_NAME, "tr")
 
-        
+      
         current_date = datetime.now().strftime("%Y-%m-%d")  
 
-        for row in rows[1:]:  #ilk satırı atlama başlık olma durumu
+        for row in rows[1:]:  #Başlık satırını atla
             columns = row.find_elements(By.TAG_NAME, "td")
             if len(columns) > 0:
-                city_name = columns[0].text.strip() if len(columns) > 0 else None
-                
+                full_address = columns[0].text.strip() if len(columns) > 0 else None
+
                 
                 rainfall_text = columns[1].text.strip() if len(columns) > 1 else '0'
-                
-                
-                print(f"Çekilen yağış verisi: {rainfall_text}")
 
-                # ',' varsa onu '.' ile değiştiriyoruz ve float'a çeviriyoruz
+                #Yağış miktarını float'a çeviriyoruz
                 rainfall = float(rainfall_text.replace(',', '.')) if rainfall_text else 0.0
 
-                #db ekleme 
-                self.insert_data(city_name, rainfall, current_date)
+                #şehir adı ve bölgeyi ayrıştır
+                city_name = full_address.split(",")[0].strip()  # İlk kısım şehir adı
+                bolge = ",".join(full_address.split(",")[1:]).strip()  # Geri kalan kısım bölge
+
+                #tablodan plaka bul
+                sehir_id = self.get_sehir_id(city_name)
+
+                if sehir_id:
+                    
+                    self.insert_data(sehir_id, bolge, rainfall, current_date)
+                else:
+                    print(f"Şehir ID bulunamadı: {city_name}")
 
         self.driver.quit()
         self.conn.close()  
 
-    def insert_data(self, city_name, rainfall, measurement_date):
+    def get_sehir_id(self, city_name):
+        try:
+            query = "SELECT id FROM sehir WHERE sehir_adi= %s;"
+            self.cursor.execute(query, (city_name,))
+            result = self.cursor.fetchone()
+            return result[0] if result else None
+        except Exception as e:
+            print("Şehir ID alınırken hata:", e)
+            return None
+
+    def insert_data(self, sehir_id, bolge, rainfall, measurement_date):
         try:
             insert_query = """
-            INSERT INTO rainfall_data (city_name, rainfall, measurement_date)
-            VALUES (%s, %s, %s);
+            INSERT INTO yagis_verisi (sehir_id, bolge, yagis_miktari, tarih)
+            VALUES (%s, %s, %s, %s);
             """
-            self.cursor.execute(insert_query, (city_name, rainfall, measurement_date))
+            self.cursor.execute(insert_query, (sehir_id, bolge, rainfall, measurement_date))
             self.conn.commit()  
-            print(f"Veri eklendi: {city_name}, {rainfall}, {measurement_date}")
+            print(f"Veri eklendi: Şehir ID: {sehir_id}, Bölge: {bolge}, Yağış: {rainfall}, Tarih: {measurement_date}")
         except Exception as e:
             print("Veri eklerken hata:", e)
 
 
-rainfall_data = RainfallData()
-rainfall_data.get_rainfall_data()
+
+if __name__ == "__main__":
+    rainfall_data = RainfallData()
+    rainfall_data.get_rainfall_data()
