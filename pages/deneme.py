@@ -7,7 +7,7 @@ def set_background_image():
     page_bg_img = """
     <style>
     [data-testid="stAppViewContainer"] {
-        background-image: url("https://raw.githubusercontent.com/yahmettokgoz/YagisAnalizi/ffa8e9c5a3606f7517674628c86a88dcaf394a07/yağmurdamlaları.jpeg");
+        background-image: url("https://raw.githubusercontent.com/yahmettokgoz/YagisAnalizi/4c8ce21bc2c0ac665898ea306147dbcb57ef753f/Ads%C4%B1z%20tasar%C4%B1m-2.jpg");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
