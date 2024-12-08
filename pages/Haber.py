@@ -52,3 +52,6 @@ if city:
             st.write("Bu şehirle ilgili haber bulunamadı.")
     else:
         st.error(result)  #except mesajları
+
+
+
