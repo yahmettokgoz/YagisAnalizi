@@ -4,29 +4,50 @@ import streamlit as st
 NEWS_API_KEY = 'fe836839d1e14e27b208a1cc9a7ba426'
 OPENWEATHER_API_KEY = 'd6754a028a36fb8416e449a417437640'  
 
+# Arka plan görselini ayarlayan CSS kodu
+def set_background_image():
+    page_bg_img = """
+    <style>
+    [data-testid="stAppViewContainer"] {
+        background-image: url("https://raw.githubusercontent.com/yahmettokgoz/YagisAnalizi/4c8ce21bc2c0ac665898ea306147dbcb57ef753f/Ads%C4%B1z%20tasar%C4%B1m-2.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+    [data-testid="stSidebar"] {
+        background: rgba(255, 255, 255, 0.9); /* Yan menüyü şeffaf yapar */
+    }
+    </style>
+    """
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# Arka planı uygula
+set_background_image()
+
 def get_weather_and_news(city):
     # OpenWeather hava durumu alma
     weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&lang=tr"
     weather_response = requests.get(weather_url)
-    weather_data = weather_response.json()# apı json sağlıyor
+    weather_data = weather_response.json()  # API JSON sağlıyor
 
     if weather_data.get("cod") != 200:
         error_message = weather_data.get("message", "Bilinmeyen bir hata oluştu.")
         return f"API Hatası: {error_message}"
 
     weather_description = weather_data['weather'][0]['description']
-    temperature = weather_data['main']['temp'] - 273.15  #Apide birim kelvin burada Celciusa çevirme işlemi 
+    temperature = weather_data['main']['temp'] - 273.15  # Kelvin'den Celsius'a çevir
 
-    # Haber apisi
+    # Haber API'si
     news_url = f"https://newsapi.org/v2/everything?q=weather&apiKey={NEWS_API_KEY}"
     news_response = requests.get(news_url)
     news_data = news_response.json()
 
-    #Haberleri şehir adıyla filtreleme işi (başlıklarda şehir adı geçiyorsa) burada başlıklar geçmiyorsa boş
+    # Şehir adıyla başlıkları filtrele
     city_news_articles = [article for article in news_data['articles'] if city.lower() in article['title'].lower()]
-    
-    # Enson 5 haber eski haberler görünmesin diye
-    city_news_articles = city_news_articles[:5]  
+
+    # Son 5 haberi göster
+    city_news_articles = city_news_articles[:5]
 
     return weather_description, temperature, city_news_articles
 
@@ -51,7 +72,4 @@ if city:
         else:
             st.write("Bu şehirle ilgili haber bulunamadı.")
     else:
-        st.error(result)  #except mesajları
-
-
-
+        st.error(result)  # API hatası
