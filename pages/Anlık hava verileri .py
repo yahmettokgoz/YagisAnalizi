@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 
 NEWS_API_KEY = 'fe836839d1e14e27b208a1cc9a7ba426'
-OPENWEATHER_API_KEY = 'd6754a028a36fb8416e449a417437640'  
+OPENWEATHER_API_KEY = 'd6754a028a36fb8416e449a417437640'
 
 # Arka plan görselini ayarlayan CSS kodu
 def set_background_image():
@@ -18,12 +18,34 @@ def set_background_image():
     [data-testid="stSidebar"] {
         background: rgba(255, 255, 255, 0.9); /* Yan menüyü şeffaf yapar */
     }
+    .emoji {
+        font-size: 30px; /* Emoji boyutunu artır */
+    }
     </style>
     """
     st.markdown(page_bg_img, unsafe_allow_html=True)
 
 # Arka planı uygula
 set_background_image()
+
+# Türkçe hava durumu açıklamalarına uygun emoji eşleştirme
+weather_emojis = {
+    "açık": "☀️",
+    "az bulutlu": "🌤️",
+    "parçalı az bulutlu": "⛅",
+    "parçalı bulutlu": "☁️",
+    "bulutlu": "🌥️",
+    "sisli": "🌫️",
+    "puslu": "🌫️",
+    "yağmurlu": "🌧️",
+    "hafif yağmur": "🌦️",
+    "sağanak yağmur": "⛈️",
+    "kar yağışlı": "❄️",
+    "hafif kar": "🌨️",
+    "gök gürültülü sağanak yağış": "⛈️",
+    "hafif yağmur ve gök gürültüsü": "⛈️",
+    "kapalı": "☁️",  # Kapalı durumu için bulut emojisi eklendi
+}
 
 def get_weather_and_news(city):
     # OpenWeather hava durumu alma
@@ -59,17 +81,22 @@ if city:
     result = get_weather_and_news(city)
     if isinstance(result, tuple):
         weather, temp, news = result
+        emoji = weather_emojis.get(weather.lower(), "❓")  # Bilinmeyen bir durum için varsayılan emoji
         st.subheader(f"{city} Hava Durumu")
-        st.write(f"Durum: {weather}")
-        st.write(f"Sıcaklık: {temp:.2f}°C")
+        st.markdown(
+            f"""<div style="font-size: 24px;"><strong>Durum:</strong> {weather} <span class="emoji">{emoji}</span></div>""",
+            unsafe_allow_html=True,
+        )  # Durumun yanına büyütülmüş emoji ekledik
+        st.markdown(f"**Sıcaklık:** {temp:.2f}°C")  # Sıcaklık kısmı kalın yazı
+        
         st.subheader(f"{city} ile ilgili Son Hava Durumu Haberleri")
         if news:
             for article in news:
-                st.write(f"Başlık: {article['title']}")
+                st.markdown(f"**Başlık:** {article['title']}")
                 st.write(f"Kaynak: {article['source']['name']}")
                 st.write(f"Link: {article['url']}")
                 st.write("\n")
         else:
-            st.write("Bu şehirle ilgili haber bulunamadı.")
+            st.markdown("Bu şehirle ilgili haber bulunamadı.")
     else:
-        st.error(result)  # API hatası
+        st.error(result)
