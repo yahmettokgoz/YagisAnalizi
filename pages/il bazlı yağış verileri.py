@@ -2,6 +2,27 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 
+# Arka plan görseli için CSS kodu
+def set_background_image():
+    page_bg_img = """
+    <style>
+    [data-testid="stAppViewContainer"] {
+        background-image: url("https://raw.githubusercontent.com/yahmettokgoz/YagisAnalizi/4c8ce21bc2c0ac665898ea306147dbcb57ef753f/Ads%C4%B1z%20tasar%C4%B1m-2.jpg");
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+    [data-testid="stSidebar"] {
+        background: rgba(255, 255, 255, 0.9); /* Yan menüyü şeffaf yapar */
+    }
+    </style>
+    """
+    st.markdown(page_bg_img, unsafe_allow_html=True)
+
+# Arka planı uygula
+set_background_image()
+
 # Veritabanı bağlantı bilgileri
 DB_NAME = 'raindb'
 DB_USER = 'postgres'
@@ -74,4 +95,3 @@ if conn:
     conn.close()
 else:
     st.error("Veritabanı bağlantısı sağlanamadı.")
-
