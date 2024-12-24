@@ -1,102 +1,78 @@
-import requests
 import streamlit as st
+import requests
 
-NEWS_API_KEY = 'fe836839d1e14e27b208a1cc9a7ba426'
+# API anahtarı
 OPENWEATHER_API_KEY = 'd6754a028a36fb8416e449a417437640'
 
-# Arka plan görselini ayarlayan CSS kodu
-def set_background_image():
-    page_bg_img = """
+# Yağmur animasyonu CSS'i
+def add_rain_animation():
+    st.markdown("""
     <style>
-    [data-testid="stAppViewContainer"] {
-        background-image: url("https://raw.githubusercontent.com/yahmettokgoz/YagisAnalizi/4c8ce21bc2c0ac665898ea306147dbcb57ef753f/Ads%C4%B1z%20tasar%C4%B1m-2.jpg");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
+    @keyframes rain {
+        0% { transform: translateY(-100vh); }
+        100% { transform: translateY(100vh); }
     }
-    [data-testid="stSidebar"] {
-        background: rgba(255, 255, 255, 0.9); /* Yan menüyü şeffaf yapar */
-    }
-    .emoji {
-        font-size: 30px; /* Emoji boyutunu artır */
+    .raindrop {
+        position: fixed;
+        width: 2px;
+        height: 20px;
+        background: #add8e6;
+        opacity: 0.5;
+        animation: rain 1.5s linear infinite;
     }
     </style>
-    """
-    st.markdown(page_bg_img, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+    
+    # Yağmur damlalarını oluştur
+    drops = "".join([
+        f'<div class="raindrop" style="left: {i}%; animation-delay: {i/20}s;"></div>'
+        for i in range(0, 100, 2)
+    ])
+    st.markdown(
+        f'<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">{drops}</div>',
+        unsafe_allow_html=True
+    )
 
-# Arka planı uygula
-set_background_image()
+# Başlık
+st.title("Anlık Hava Durumu")
 
-# Türkçe hava durumu açıklamalarına uygun emoji eşleştirme
-weather_emojis = {
-    "açık": "☀️",
-    "az bulutlu": "🌤️",
-    "parçalı az bulutlu": "⛅",
-    "parçalı bulutlu": "☁️",
-    "bulutlu": "🌥️",
-    "sisli": "🌫️",
-    "puslu": "🌫️",
-    "yağmurlu": "🌧️",
-    "hafif yağmur": "🌦️",
-    "sağanak yağmur": "⛈️",
-    "kar yağışlı": "❄️",
-    "hafif kar": "🌨️",
-    "gök gürültülü sağanak yağış": "⛈️",
-    "hafif yağmur ve gök gürültüsü": "⛈️",
-    "kapalı": "☁️",  # Kapalı durumu için bulut emojisi eklendi
-}
+# Şehir listesi
+cities = [
+    "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin", 
+    "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", 
+    "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan", "Erzurum", 
+    "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Iğdır", "Isparta", "İstanbul", 
+    "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kırıkkale", "Kırklareli", 
+    "Kırşehir", "Kilis", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş", 
+    "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Şanlıurfa", "Siirt", "Sinop", 
+    "Şırnak", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
+]
 
-def get_weather_and_news(city):
-    # OpenWeather hava durumu alma
-    weather_url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={OPENWEATHER_API_KEY}&lang=tr"
-    weather_response = requests.get(weather_url)
-    weather_data = weather_response.json()  # API JSON sağlıyor
 
-    if weather_data.get("cod") != 200:
-        error_message = weather_data.get("message", "Bilinmeyen bir hata oluştu.")
-        return f"API Hatası: {error_message}"
+# Şehir seçimi
+selected_city = st.selectbox("Şehir Seçin:", cities)
 
-    weather_description = weather_data['weather'][0]['description']
-    temperature = weather_data['main']['temp'] - 273.15  # Kelvin'den Celsius'a çevir
-
-    # Haber API'si
-    news_url = f"https://newsapi.org/v2/everything?q=weather&apiKey={NEWS_API_KEY}"
-    news_response = requests.get(news_url)
-    news_data = news_response.json()
-
-    # Şehir adıyla başlıkları filtrele
-    city_news_articles = [article for article in news_data['articles'] if city.lower() in article['title'].lower()]
-
-    # Son 5 haberi göster
-    city_news_articles = city_news_articles[:5]
-
-    return weather_description, temperature, city_news_articles
-
-st.title("Hava Durumu ve Hava Haberleri")
-
-city = st.text_input("Şehir Adı", "İstanbul")
-
-if city:
-    result = get_weather_and_news(city)
-    if isinstance(result, tuple):
-        weather, temp, news = result
-        emoji = weather_emojis.get(weather.lower(), "❓")  # Bilinmeyen bir durum için varsayılan emoji
-        st.subheader(f"{city} Hava Durumu")
-        st.markdown(
-            f"""<div style="font-size: 24px;"><strong>Durum:</strong> {weather} <span class="emoji">{emoji}</span></div>""",
-            unsafe_allow_html=True,
-        )  # Durumun yanına büyütülmüş emoji ekledik
-        st.markdown(f"**Sıcaklık:** {temp:.2f}°C")  # Sıcaklık kısmı kalın yazı
+if st.button("Hava Durumunu Göster"):
+    try:
+        # API isteği
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={selected_city},TR&appid={OPENWEATHER_API_KEY}&units=metric&lang=tr"
+        response = requests.get(url)
         
-        st.subheader(f"{city} ile ilgili Son Hava Durumu Haberleri")
-        if news:
-            for article in news:
-                st.markdown(f"**Başlık:** {article['title']}")
-                st.write(f"Kaynak: {article['source']['name']}")
-                st.write(f"Link: {article['url']}")
-                st.write("\n")
+        if response.status_code == 200:
+            data = response.json()
+            
+            # Hava durumu bilgilerini göster
+            st.write(f"Sıcaklık: {data['main']['temp']}°C")
+            st.write(f"Nem: {data['main']['humidity']}%")
+            weather_desc = data['weather'][0]['description'].lower()
+            st.write(f"Durum: {weather_desc}")
+            
+            # Eğer "yağmur" kelimesi geçiyorsa animasyonu göster
+            if "yağmur" in weather_desc:
+                add_rain_animation()
+                st.write("🌧️ Yağmur yağıyor!")
         else:
-            st.markdown("Bu şehirle ilgili haber bulunamadı.")
-    else:
-        st.error(result)
+            st.error("Hava durumu bilgisi alınamadı!")
+            
+    except Exception as e:
+        st.error(f"Bir hata oluştu: {str(e)}")
