@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.express as px
 
 # Şehir seçimi ve veri görselleştirme
 st.title("Şehirler")
@@ -39,6 +40,23 @@ rain_data = {city: np.random.uniform(10, 100, 12) for city in cities}
 # DataFrame oluşturma
 rain_df = pd.DataFrame(rain_data, index=["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"])
 
-# Seçilen şehrin verilerini gösterme
+# Seçilen şehrin verilerini görselleştirme
 st.subheader(f"{sehir} Şehrinin 12 Aylık Ortalama Yağış Verisi")
-st.bar_chart(rain_df[sehir])
+
+# Veriyi uygun formata çevirme
+selected_city_data = rain_df[sehir].reset_index()
+selected_city_data.columns = ["Ay", "Yağış (mm)"]
+
+# Plotly ile grafik oluşturma
+fig = px.bar(
+    selected_city_data,
+    x="Ay",
+    y="Yağış (mm)",
+    title=f"{sehir} Şehrinin 12 Aylık Yağış Verisi",
+    labels={"Yağış (mm)": "Yağış Miktarı (mm)", "Ay": "Aylar"},
+    template="plotly_white",
+    color="Yağış (mm)",
+    color_continuous_scale="Blues"
+)
+
+st.plotly_chart(fig)
