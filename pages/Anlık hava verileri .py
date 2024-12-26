@@ -48,7 +48,6 @@ cities = [
     "Şırnak", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"
 ]
 
-
 # Şehir seçimi
 selected_city = st.selectbox("Şehir Seçin:", cities)
 
@@ -65,12 +64,20 @@ if st.button("Hava Durumunu Göster"):
             st.write(f"Sıcaklık: {data['main']['temp']}°C")
             st.write(f"Nem: {data['main']['humidity']}%")
             weather_desc = data['weather'][0]['description'].lower()
-            st.write(f"Durum: {weather_desc}")
             
-            # Eğer "yağmur" kelimesi geçiyorsa animasyonu göster
-            if "yağmur" in weather_desc:
+            # Hava durumu açıklaması ve emojiler
+            emoji = ""
+            if "parçalı bulutlu" in weather_desc:
+                emoji = " :cloud:"
+            elif "parçalı az bulutlu" in weather_desc:
+                emoji = " :cloud:"
+            elif "sisli" in weather_desc:
+                emoji = " :fog:"
+            elif "yağmur" in weather_desc:
                 add_rain_animation()
-                st.write("🌧️ Yağmur yağıyor!")
+                emoji = " 🌧️"
+
+            st.write(f"Durum: {weather_desc}{emoji}")
         else:
             st.error("Hava durumu bilgisi alınamadı!")
             
