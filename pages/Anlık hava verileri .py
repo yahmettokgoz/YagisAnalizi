@@ -61,23 +61,24 @@ if st.button("Hava Durumunu Göster"):
             data = response.json()
             
             # Hava durumu bilgilerini göster
-            st.write(f"Sıcaklık: {data['main']['temp']}°C")
-            st.write(f"Nem: {data['main']['humidity']}%")
+            st.markdown(f"<h2>Sıcaklık: {data['main']['temp']}°C</h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2>Nem: {data['main']['humidity']}%</h2>", unsafe_allow_html=True)
+            
             weather_desc = data['weather'][0]['description'].lower()
             
             # Hava durumu açıklaması ve emojiler
             emoji = ""
             if "parçalı bulutlu" in weather_desc:
-                emoji = " :cloud:"
+                emoji = "☁️"
             elif "parçalı az bulutlu" in weather_desc:
-                emoji = " :cloud:"
+                emoji = "☁️"
             elif "sisli" in weather_desc:
-                emoji = " :fog:"
+                emoji = "🌫️"
             elif "yağmur" in weather_desc:
                 add_rain_animation()
-                emoji = " 🌧️"
+                emoji = "🌧️"
 
-            st.write(f"Durum: {weather_desc}{emoji}")
+            st.markdown(f"<h2>Durum: {weather_desc} {emoji}</h2>", unsafe_allow_html=True)
         else:
             st.error("Hava durumu bilgisi alınamadı!")
             
