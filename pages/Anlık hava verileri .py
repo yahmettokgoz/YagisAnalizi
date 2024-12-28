@@ -1,8 +1,15 @@
 import streamlit as st
 import requests
+import openai
+from langchain_community.llms import OpenAI
+from dotenv import load_dotenv
+import os
 
-# API anahtarı
-OPENWEATHER_API_KEY = 'd6754a028a36fb8416e449a417437640'
+load_dotenv()
+# API anahtarları
+OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')# OpenAI API anahtarınızı buraya ekleyin
+openai.api_key = OPENAI_API_KEY
 
 # Yağmur animasyonu CSS'i
 def add_rain_animation():
@@ -33,6 +40,21 @@ def add_rain_animation():
         unsafe_allow_html=True
     )
 
+# Hava durumuna göre öneri oluşturma
+def generate_suggestion(temp, humidity, weather_desc):
+    llm = OpenAI(temperature=0.7, openai_api_key=OPENAI_API_KEY)
+    prompt = prompt = f"""
+Hava durumu şu şekilde:
+- Sıcaklık: {temp}°C
+- Nem: {humidity}% 
+- Hava Durumu: {weather_desc}
+
+Bu bilgilere göre, kullanıcılara uygun bir öneri yap.
+Öneriler, hava koşullarına uygun aktiviteler, giyim önerileri ve dışarıda yapılacak işler hakkında olmalı.
+Cevap, kullanıcıya doğrudan hitap ederek samimi ve anlaşılır olmalı ve bir öneri ile tamamlanmalı.
+"""
+    suggestion = llm(prompt)
+    return suggestion.strip()
 # Başlık
 st.title("Anlık Hava Durumu")
 
@@ -61,26 +83,24 @@ if st.button("Hava Durumunu Göster"):
             data = response.json()
             
             # Hava durumu bilgilerini göster
-            st.markdown(f"<h2>Sıcaklık: {data['main']['temp']}°C</h2>", unsafe_allow_html=True)
-            st.markdown(f"<h2>Nem: {data['main']['humidity']}%</h2>", unsafe_allow_html=True)
-            
+            temp = data['main']['temp']
+            humidity = data['main']['humidity']
             weather_desc = data['weather'][0]['description'].lower()
             
+            st.write(f"Sıcaklık: {temp}°C")
+            st.write(f"Nem: {humidity}%")
+            st.markdown(f"<h2>Durum: {weather_desc}</h2>", unsafe_allow_html=True)
+            
             # Hava durumu açıklaması ve emojiler
-            emoji = ""
-            if "parçalı bulutlu" in weather_desc:
-                emoji = "☁️"
-            elif "parçalı az bulutlu" in weather_desc:
-                emoji = "☁️"
-            elif "sisli" in weather_desc:
-                emoji = "🌫️"
-            elif "yağmur" in weather_desc:
+            if "yağmur" in weather_desc:
                 add_rain_animation()
-                emoji = "🌧️"
-
-            st.markdown(f"<h2>Durum: {weather_desc} {emoji}</h2>", unsafe_allow_html=True)
+                st.write("🌧️ Yağmur yağıyor!")
+            
+            # Öneri oluştur ve göster
+            suggestion = generate_suggestion(temp, humidity, weather_desc)
+            st.subheader("Öneri:")
+            st.write(suggestion)
         else:
             st.error("Hava durumu bilgisi alınamadı!")
-            
     except Exception as e:
         st.error(f"Bir hata oluştu: {str(e)}")
