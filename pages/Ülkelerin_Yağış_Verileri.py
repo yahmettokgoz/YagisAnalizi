@@ -61,6 +61,7 @@ st.write(f"**Seçilen Kıta:** {continent}")
 st.write(f"**Seçilen Ülke:** {country}")
 
 # Manuel koordinat verisi
+# Manuel koordinat verisi
 coordinates = {
     "Türkiye": [39.9208, 32.8541],
     "Germany": [51.1657, 10.4515],
@@ -72,7 +73,23 @@ coordinates = {
     "Mexico": [23.6345, -102.5528],
     "China": [35.8617, 104.1954],
     "India": [20.5937, 78.9629],
+    "Japan": [36.2048, 138.2529],
+    "South Korea": [35.9078, 127.7669],
+    "Nigeria": [9.0820, 8.6753],
+    "Kenya": [-1.2864, 36.8172],
+    "South Africa": [-30.5595, 22.9375],
+    "Egypt": [26.8206, 30.8025],
+    "Brazil": [-14.2350, -51.9253],
+    "Argentina": [-38.4161, -63.6167],
+    "Chile": [-35.6751, -71.5430],
+    "Peru": [-9.1899, -75.0152],
+    "Australia": [-25.2744, 133.7751],
+    "New Zealand": [-40.9006, 174.8860],
+    "Fiji": [-17.7134, 178.0650],
+    "Papua New Guinea": [-6.314993, 143.95555],
+    "Cuba": [21.5218, -77.7812]
 }
+
 
 # Beklenen yağış miktarları
 expected_rain = {
