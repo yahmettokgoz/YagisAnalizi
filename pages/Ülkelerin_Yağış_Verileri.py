@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Sayfa tasarımı için dinamik CSS
 def set_custom_style():
@@ -17,31 +18,11 @@ def set_custom_style():
         padding: 1rem;
         border-radius: 10px;
     }
-    .light-theme {
-        background-color: #f5f5f5;
-        color: #000;
-    }
-    .dark-theme {
-        background-color: #2e3b4e;
-        color: #fff;
-    }
     </style>
     """
     st.markdown(custom_css, unsafe_allow_html=True)
 
-# CSS uygulaması
 set_custom_style()
-
-# Tema belirleme
-theme = st.sidebar.radio("Tema Seçimi", ["Açık", "Karanlık"])
-if theme == "Açık":
-    st.markdown("<div class='light-theme'>", unsafe_allow_html=True)
-else:
-    st.markdown("<div class='dark-theme'>", unsafe_allow_html=True)
-
-# Başlık
-st.title("Yağış Verisi ve Harita Görüntüleyici 🌦")
-st.markdown("Seçilen bir kıta ve ülkeye ait yağış verilerini, konumunu harita üzerinde görün ve yağış şiddeti karşılaştırmasını yapın.")
 
 # Kıta ve ülke seçimleri
 continents = {
@@ -60,8 +41,20 @@ country = st.sidebar.selectbox("Ülke seçiniz", options=continents[continent])
 st.write(f"**Seçilen Kıta:** {continent}")
 st.write(f"**Seçilen Ülke:** {country}")
 
-# Manuel koordinat verisi
-# Manuel koordinat verisi
+# CSV dosyasını oku
+try:
+    # CSV dosyasını okuma
+    df = pd.read_csv("ulke_data.csv")
+
+    # Ülkeler ve yağış verilerini bir sözlüğe dönüştürme
+    rain_data_10_years = dict(zip(df['country'], df['ten_year_avg_rainfall']))
+    current_year_rain = dict(zip(df['country'], df['current_year_rainfall']))
+except FileNotFoundError:
+    st.error("ulke_data.csv dosyası bulunamadı.")
+    rain_data_10_years = {}
+    current_year_rain = {}
+
+# Koordinat verisi
 coordinates = {
     "Türkiye": [39.9208, 32.8541],
     "Germany": [51.1657, 10.4515],
@@ -90,72 +83,51 @@ coordinates = {
     "Cuba": [21.5218, -77.7812]
 }
 
-
-# Beklenen yağış miktarları
-expected_rain = {
-    "Türkiye": 50,
-    "Germany": 40,
-    "France": 30,
-    "Italy": 45,
-    "Spain": 35,
-    "USA": 60,
-    "Canada": 55,
-    "Mexico": 40,
-    "China": 70,
-    "India": 80,
-}
-
-# Örnek yağış verisi (gerçek zamanlı veri alınabilir)
-actual_rain = 45  # Burada örnek bir veri kullanılıyor.
-
 # Yağış şiddeti açıklaması
-def yagis_siddeti_karti(yagis_miktari, beklenen_miktar):
-    st.subheader("Yağış Şiddeti ve Karşılaştırma")
+def yagis_siddeti_karti(ulke, gecmis_ortalama, bu_yil):
+    st.subheader(f"{ulke} Yağış Verisi Karşılaştırması")
 
-    # Yağış farkını hesapla
-    fark = yagis_miktari - beklenen_miktar
+    fark = bu_yil - gecmis_ortalama
     if fark > 0:
-        durum = f"Bu yıl beklenenden {fark:.2f} mm daha fazla yağmur yağdı."
+        durum = f"Bu yıl, son 10 yılın ortalamasına göre {fark:.2f} mm daha fazla yağmur yağdı."
         renk = "green"
     elif fark < 0:
-        durum = f"Bu yıl beklenenden {abs(fark):.2f} mm daha az yağmur yağdı."
+        durum = f"Bu yıl, son 10 yılın ortalamasına göre {abs(fark):.2f} mm daha az yağmur yağdı."
         renk = "red"
     else:
-        durum = "Bu yıl beklenen miktarda yağmur yağdı."
+        durum = "Bu yıl, son 10 yılın ortalamasına eşit miktarda yağmur yağdı."
         renk = "blue"
 
     st.markdown(
         f"""
-        <div style='border: 2px solid {renk}; padding: 10px; border-radius: 10px;'>
+        <div style='border: 2px solid {renk}; padding: 10px; border-radius: 10px; margin-bottom: 15px;'>
             <p style='color: {renk};'>{durum}</p>
         </div>
         """, unsafe_allow_html=True
     )
 
-# Yağış şiddeti ve karşılaştırma
-yagis_siddeti_karti(actual_rain, expected_rain.get(country, 50))
+    # Grafik oluşturma
+    if ulke in rain_data_10_years and ulke in current_year_rain:
+        fig, ax = plt.subplots()
+        ax.bar(['Bu Yıl', '10 Yıl Ortalaması'], [bu_yil, gecmis_ortalama], color=['blue', 'orange'])
+        ax.set_title(f"{ulke} Yağış Karşılaştırması")
+        ax.set_ylabel("Yağış (mm)")
+        st.pyplot(fig)
 
-# Yağış verilerini oluştur
-rain_data = {
-    "Tarih": pd.date_range(start="2024-01-01", periods=10, freq="D"),
-    "Yağış (mm)": [5, 10, 3, 12, 7, 0, 8, 15, 20, 4]
-}
-rain_df = pd.DataFrame(rain_data)
-
-# Yağış verilerini grafik olarak göster
-st.subheader("Yağış Verisi Grafiği")
-st.line_chart(rain_df.set_index("Tarih")["Yağış (mm)"])
+# Seçilen ülke için yağış karşılaştırmasını göster
+if country in rain_data_10_years and country in current_year_rain:
+    yagis_siddeti_karti(country, rain_data_10_years[country], current_year_rain[country])
+else:
+    st.warning(f"{country} için eksik veri mevcut.")
 
 # Harita bilgileri
 if country in coordinates:
     latitude, longitude = coordinates[country]
     st.success(f"{country} konum bilgisi: {latitude}, {longitude}")
-    
+
     # Harita için DataFrame oluştur
     map_data = pd.DataFrame({'lat': [latitude], 'lon': [longitude]})
     st.subheader("Seçilen Ülke Haritası")
     st.map(map_data)
 else:
     st.warning(f"{country} için koordinat bilgisi bulunamadı.")
-
-st.markdown("</div>", unsafe_allow_html=True)
