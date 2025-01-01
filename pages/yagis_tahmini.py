@@ -17,7 +17,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 # Sayfa başlığı
-st.title("Yağış Tahmini")
+st.title("🌧️ Yağış Tahmini 🌧️")
 
 # Veriyi okuma ve hazırlama
 df = pd.read_csv('yagis_verisi.csv')
@@ -48,14 +48,41 @@ forecast = model_fit.get_forecast(steps=7, exog=future_exog)
 forecast_mean = forecast.predicted_mean
 forecast_conf_int = forecast.conf_int()
 
-# Tahminlerin ortalamasını hesaplama
-average_forecast = forecast_mean.mean()
+# Yağış şiddeti kartı fonksiyonu
+def yagis_siddeti_karti(tarih, yagis_miktari):
+    if yagis_miktari < 2.5:
+        renk = 'green'
+        seviye = 'Çok Hafif Yağış'
+        aciklama = 'Bu yağış miktarı (ör. {0:.2f} mm), zemini hafifçe nemlendirecek kadar azdır.'.format(yagis_miktari)
+    elif 2.5 <= yagis_miktari < 7.6:
+        renk = 'blue'
+        seviye = 'Hafif Yağış'
+        aciklama = 'Bu yağış miktarı (ör. {0:.2f} mm), hafif bir yağış olarak kabul edilir.'.format(yagis_miktari)
+    elif 7.6 <= yagis_miktari < 50:
+        renk = 'orange'
+        seviye = 'Orta Şiddetli Yağış'
+        aciklama = 'Bu yağış miktarı (ör. {0:.2f} mm), orta şiddetli bir yağış olarak kabul edilir.'.format(yagis_miktari)
+    else:
+        renk = 'red'
+        seviye = 'Şiddetli Yağış'
+        aciklama = 'Bu yağış miktarı (ör. {0:.2f} mm), şiddetli bir yağış olarak kabul edilir.'.format(yagis_miktari)
 
-# Sonuçları gösterme
-st.info(f"Bir hafta için tahmin edilen ortalama yağış miktarı: {average_forecast:.2f} mm", icon="ℹ️")
+    st.markdown(
+        f"""
+        <div style='border: 2px solid {renk}; padding: 10px; border-radius: 10px; margin-bottom: 10px;'>
+            <h3 style='color: {renk};'>{tarih} - {seviye}</h3>
+            <p>{aciklama}</p>
+        </div>
+        """, unsafe_allow_html=True
+    )
+
+# Sonuçları kart formatında gösterme
+st.subheader("📅 Günlük Yağış Tahminleri 📅")
+for i, date in enumerate(future_dates):
+    yagis_siddeti_karti(date.strftime('%Y-%m-%d'), forecast_mean[i])
 
 # Tahmin sonuçlarını görselleştirme
-fig = px.line(df, x=df.index, y='yagis_miktari', title='Yağış Miktarı Tahmini')
+fig = px.line(df, x=df.index, y='yagis_miktari', title='Yağış Miktarı Tahmini', labels={'yagis_miktari': 'Yağış Miktarı (mm)'})
 fig.add_scatter(x=future_dates, y=forecast_mean, mode='lines+markers', name='Tahmin Edilen Yağış Miktarı', line=dict(color='red'))
 fig.add_scatter(x=future_dates, y=forecast_conf_int.iloc[:, 0], mode='lines', name='Alt Güven Sınırı', line=dict(width=0.5, color='orange'))
 fig.add_scatter(x=future_dates, y=forecast_conf_int.iloc[:, 1], mode='lines', name='Üst Güven Sınırı', line=dict(width=0.5, color='orange'))
@@ -64,6 +91,6 @@ st.plotly_chart(fig)
 # Bilgilendirme
 st.markdown("""
 ### Nasıl Çalışır?
-- Model, geçmiş yağış verilerini kullanarak bir hafta için genel bir yağış tahmini yapar
-- Bu tahmin tüm Türkiye için ortalama bir tahmindir
-""")
+- Model, geçmiş yağış verilerini kullanarak bir hafta için genel bir yağış tahmini yapar.
+- Bu tahmin tüm Türkiye için ortalama bir tahmindir.
+""", unsafe_allow_html=True)

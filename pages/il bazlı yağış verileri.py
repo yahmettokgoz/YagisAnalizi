@@ -8,7 +8,7 @@ import plotly.express as px
 DB_NAME = 'raindb'
 DB_USER = 'postgres'
 DB_PASSWORD = '134679'
-DB_HOST = '192.168.34.192'  # PostgreSQL sunucusunun IP adresi
+DB_HOST = '192.168.32.35'  # PostgreSQL sunucusunun IP adresi
 DB_PORT = '5432'  # PostgreSQL varsayılan portu
 
 def connect_db():
@@ -82,14 +82,23 @@ conn = connect_db()
 
 if conn:
     # Şehirlerin ID'lerini ve isimlerini veritabanından çekme
-    query = "SELECT DISTINCT sehir_id, bolge FROM yagis_verisi;"  # 'bolge' şehri temsil eder
+    query = """
+    SELECT DISTINCT yv.sehir_id, yv.bolge, s.sehir_adi
+    FROM yagis_verisi yv
+    JOIN sehir s ON CAST(yv.sehir_id AS VARCHAR) = s.plaka;
+    """
     cities_df = pd.read_sql_query(query, conn)
 
     if cities_df.empty:
         st.error("Şehir verisi bulunamadı.")
     else:
+        # Şehir ID ve adını birleştirerek selectbox için seçenekler oluşturma
+        cities_df['sehir'] = cities_df['sehir_id'].astype(str) + " - " + cities_df['sehir_adi']
+        unique_cities = cities_df[['sehir_id', 'sehir']].drop_duplicates()
+
         # selectbox ile şehir seçme (şehir id'lerini kullanacağız)
-        selected_city_id = st.selectbox("Bir şehir seçin:", cities_df['sehir_id'].tolist())  # 'sehir_id' kullanıyoruz
+        selected_city = st.selectbox("Bir şehir seçin:", unique_cities['sehir'].tolist())  # 'sehir' kullanıyoruz
+        selected_city_id = int(selected_city.split(" - ")[0])  # Seçilen şehir ID'sini alıyoruz
 
         # Şehir ID'sine göre sadece o şehre ait olan bölgeleri filtreleme
         city_bolges = cities_df[cities_df['sehir_id'] == selected_city_id]['bolge'].unique().tolist()

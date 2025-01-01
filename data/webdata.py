@@ -8,7 +8,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 from datetime import datetime
-
+import schedule
+import time
 
 class RainfallData:
     def __init__(self):
@@ -96,8 +97,13 @@ class RainfallData:
         except Exception as e:
             print("Veri eklerken hata:", e)
 
-
-
-if __name__ == "__main__":
+def job():
     rainfall_data = RainfallData()
     rainfall_data.get_rainfall_data()
+
+# Her gün saat 23:40'da çalışacak şekilde zamanla
+schedule.every().day.at("23:40").do(job)
+
+while True:
+    schedule.run_pending()
+    time.sleep(1)
